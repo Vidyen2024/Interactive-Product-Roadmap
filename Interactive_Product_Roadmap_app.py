@@ -14,8 +14,8 @@ if "tasks" not in st.session_state:
 st.sidebar.header("Manage Tasks")
 with st.sidebar.form("task_form"):
     task_name = st.text_input("Task Name")
-    priority = st.selectbox("Priority", ["High", "Medium", "Low"])
-    status = st.selectbox("Status", ["Backlog", "In Progress", "Completed"])
+    priority = st.selectbox("Priority", ["High", "Medium", "Low"], help="Set the priority of the task")
+    status = st.selectbox("Status", ["Backlog", "In Progress", "Completed"], help="Set the current status of the task")
     due_date = st.date_input("Due Date", datetime.today() + timedelta(days=7))
     submit_button = st.form_submit_button("Add Task")
 
@@ -37,13 +37,13 @@ with st.sidebar.form("task_form"):
 
 # Main Dashboard
 st.title("Interactive Product Roadmap 📅")
-st.write("Easily manage and visualize your product roadmap.")
+st.write("Easily manage and visualize your product roadmap with task tracking, priority filtering, and a Gantt chart.")
 
 # Filters
 st.subheader("Filters")
-search_keyword = st.text_input("Search Tasks (by name)")
-priority_filter = st.selectbox("Filter by Priority", ["All", "High", "Medium", "Low"])
-status_filter = st.selectbox("Filter by Status", ["All", "Backlog", "In Progress", "Completed"])
+search_keyword = st.text_input("Search Tasks (by name)", help="Type keywords to search for tasks")
+priority_filter = st.selectbox("Filter by Priority", ["All", "High", "Medium", "Low"], help="Filter tasks by priority level")
+status_filter = st.selectbox("Filter by Status", ["All", "Backlog", "In Progress", "Completed"], help="Filter tasks by status")
 
 # Apply Filters
 filtered_tasks = st.session_state["tasks"]
@@ -59,23 +59,35 @@ if status_filter != "All":
 # Display Task Table
 st.subheader("Roadmap Table")
 if not filtered_tasks.empty:
-    st.dataframe(filtered_tasks.style.format({"Due Date": lambda x: x.strftime("%Y-%m-%d")}))
+    st.dataframe(
+        filtered_tasks.style.format({"Due Date": lambda x: x.strftime("%Y-%m-%d")}),
+        use_container_width=True,
+    )
 else:
     st.warning("No tasks match the current filters. Add a task or adjust the filters.")
 
 # Gantt Chart
 st.subheader("Gantt Chart")
 if not filtered_tasks.empty:
+    filtered_tasks_sorted = filtered_tasks.sort_values("Due Date", ascending=False)
     gantt_chart = px.timeline(
-        filtered_tasks,
+        filtered_tasks_sorted,
         x_start="Due Date",
         x_end="Due Date",
         y="Task",
         color="Priority",
-        title="Roadmap Gantt Chart",
+        title="Task Timeline",
         labels={"Due Date": "Due Date", "Task": "Task Name"},
+        height=600,
     )
-    gantt_chart.update_yaxes(categoryorder="total ascending")
+    gantt_chart.update_layout(
+        xaxis_title="Dates",
+        yaxis_title="Tasks",
+        xaxis=dict(showgrid=True),
+        yaxis=dict(categoryorder="total ascending"),
+        title_x=0.5,
+        font=dict(size=12),
+    )
     st.plotly_chart(gantt_chart, use_container_width=True)
 else:
     st.info("Add tasks to visualize them on the Gantt chart.")
